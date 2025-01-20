@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\_Kontur\\2024\\MangaTranslatorHelper\\MangaTranslatorHelper\\MangaTranslatorHelper.csproj",
+      "projectUniqueName": "D:\\_Repo\\MangaTranslatorHelper\\MangaTranslatorHelper\\MangaTranslatorHelper.csproj",
       "projectName": "MangaTranslatorHelper",
-      "projectPath": "D:\\_Kontur\\2024\\MangaTranslatorHelper\\MangaTranslatorHelper\\MangaTranslatorHelper.csproj",
+      "projectPath": "D:\\_Repo\\MangaTranslatorHelper\\MangaTranslatorHelper\\MangaTranslatorHelper.csproj",
       "packagesPath": "C:\\Users\\BETEP\\.nuget\\packages\\",
-      "outputPath": "D:\\_Kontur\\2024\\MangaTranslatorHelper\\MangaTranslatorHelper\\obj\\",
+      "outputPath": "D:\\_Repo\\MangaTranslatorHelper\\MangaTranslatorHelper\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\BETEP\\AppData\\Roaming\\NuGet\\NuGet.Config",

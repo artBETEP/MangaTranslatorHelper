@@ -148,13 +148,17 @@ namespace MangaTranslatorHelper
                 var textLabel = new Label() { Left = 20, Top = 15, Text = "Mark:" };
                 var inputBox = new TextBox() { Left = 20, Top = 50, Width = 400, Height = 300, Multiline = true };
 
-                var confirmation = new Button() { Text = "OK", Left = 180, Top = 350, Width = 80, Height = 80 };
+                var confirmation = new Button() { Text = "OK", Left = 280, Top = 350, Width = 80, Height = 80 };
+                var translation = new Button() { Text = "Translate", Left = 120, Top = 350, Width = 120, Height = 80 };
+
 
                 confirmation.Click += (sender, e) => { prompt.DialogResult = DialogResult.OK; prompt.Close(); };
+                translation.Click += (sender, e) => { inputBox.Text = Translate(); };
 
                 prompt.Controls.Add(textLabel);
                 prompt.Controls.Add(inputBox);
                 prompt.Controls.Add(confirmation);
+                prompt.Controls.Add(translation);
                 prompt.AcceptButton = confirmation;
 
                 return prompt.ShowDialog() == DialogResult.OK ? inputBox.Text : string.Empty;
@@ -211,6 +215,11 @@ namespace MangaTranslatorHelper
 
                 File.WriteAllText(fileName, sb.ToString());
             }
+        }
+
+        private string Translate()
+        {
+            return "Translation not implemented";
         }
     }
 }
