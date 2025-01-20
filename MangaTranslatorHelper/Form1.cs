@@ -9,6 +9,7 @@ namespace MangaTranslatorHelper
         private Rectangle currentRectangle;
         private List<Annotation> annotations = new List<Annotation>();
         private Annotation selectedAnnotation = null;
+        private OpenAI chatGPT;
 
 
         public Form1()
@@ -37,7 +38,7 @@ namespace MangaTranslatorHelper
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            chatGPT = new OpenAI("InsertChatGptApiKeyHere");
         }
 
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -79,7 +80,6 @@ namespace MangaTranslatorHelper
                 isDrawing = false;
 
                 var label = PromptForLabel();
-                //var label = "Test text";
 
                 if (!string.IsNullOrEmpty(label))
                 {
@@ -153,7 +153,7 @@ namespace MangaTranslatorHelper
 
 
                 confirmation.Click += (sender, e) => { prompt.DialogResult = DialogResult.OK; prompt.Close(); };
-                translation.Click += (sender, e) => { inputBox.Text = Translate(); };
+                translation.Click += (sender, e) => { Translate(inputBox); };
 
                 prompt.Controls.Add(textLabel);
                 prompt.Controls.Add(inputBox);
@@ -217,9 +217,9 @@ namespace MangaTranslatorHelper
             }
         }
 
-        private string Translate()
+        private async Task Translate(TextBox textBox)
         {
-            return "Translation not implemented";
+            textBox.Text = await chatGPT.SendMessageAsync("Reply with you version");
         }
     }
 }
