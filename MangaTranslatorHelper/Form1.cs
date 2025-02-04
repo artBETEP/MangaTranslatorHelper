@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Forms;
 
 namespace MangaTranslatorHelper
 {
@@ -8,9 +8,27 @@ namespace MangaTranslatorHelper
         private bool isDrawing = false;
         private Point startPoint;
         private Rectangle currentRectangle;
+
         private List<Annotation> annotations = new List<Annotation>();
         private Annotation selectedAnnotation = null;
+
         private string imageFilename;
+
+        private bool isDragging = false;
+        private Point dragStart;
+        private Annotation draggedAnnotation = null;
+
+        private bool isResizing = false;
+        private const int resizeMargin = 10;
+        //private Rectangle resizeRectangle;
+        private Annotation resizingAnnotation = null;
+        private ResizeDirection resizeDirection = ResizeDirection.None;
+
+        private enum ResizeDirection
+        {
+            None, Left, Right, Top, Bottom, TopLeft, TopRight, BottomLeft, BottomRight
+        }
+
 
         public Form1()
         {
@@ -48,9 +66,23 @@ namespace MangaTranslatorHelper
             {
                 selectedAnnotation = annotations.FirstOrDefault(a => a.Area.Contains(e.Location));
 
+
+
                 if (selectedAnnotation != null)
                 {
-                    pictureBox1.Invalidate();
+                    resizeDirection = GetResizeDirection(selectedAnnotation, e.Location);
+
+                    if (resizeDirection != ResizeDirection.None)
+                    {
+                        isResizing = true;
+                        resizingAnnotation = selectedAnnotation;
+                        dragStart = e.Location;
+                        return;
+                    }
+
+                    isDragging = true;
+                    dragStart = e.Location;
+                    draggedAnnotation = selectedAnnotation;
                     return;
                 }
 
@@ -61,7 +93,49 @@ namespace MangaTranslatorHelper
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isDrawing)
+            if (isResizing && resizingAnnotation != null)
+            {
+                int offsetX = e.X - dragStart.X;
+                int offsetY = e.Y - dragStart.Y;
+                Rectangle rect = resizingAnnotation.Area;
+
+                switch (resizeDirection)
+                {
+                    case ResizeDirection.Left:
+                        rect = new Rectangle(rect.X + offsetX, rect.Y, rect.Width - offsetX, rect.Height);
+                        break;
+                    case ResizeDirection.Right:
+                        rect = new Rectangle(rect.X, rect.Y, rect.Width + offsetX, rect.Height);
+                        break;
+                    case ResizeDirection.Top:
+                        rect = new Rectangle(rect.X, rect.Y + offsetY, rect.Width, rect.Height - offsetY);
+                        break;
+                    case ResizeDirection.Bottom:
+                        rect = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height + offsetY);
+                        break;
+                    case ResizeDirection.TopLeft:
+                        rect = new Rectangle(rect.X + offsetX, rect.Y + offsetY, rect.Width - offsetX, rect.Height - offsetY);
+                        break;
+                    case ResizeDirection.TopRight:
+                        rect = new Rectangle(rect.X, rect.Y + offsetY, rect.Width + offsetX, rect.Height - offsetY);
+                        break;
+                    case ResizeDirection.BottomLeft:
+                        rect = new Rectangle(rect.X + offsetX, rect.Y, rect.Width - offsetX, rect.Height + offsetY);
+                        break;
+                    case ResizeDirection.BottomRight:
+                        rect = new Rectangle(rect.X, rect.Y, rect.Width + offsetX, rect.Height + offsetY);
+                        break;
+                }
+
+                if (rect.Width > 20 && rect.Height > 20)
+                {
+                    resizingAnnotation.Area = rect;
+                    dragStart = e.Location;
+                }
+
+                pictureBox1.Invalidate();
+            }
+            else if (isDrawing)
             {
                 int x = Math.Min(startPoint.X, e.X);
                 int y = Math.Min(startPoint.Y, e.Y);
@@ -71,6 +145,56 @@ namespace MangaTranslatorHelper
 
                 pictureBox1.Invalidate();
             }
+            else if (isDragging)
+            {
+                int offsetX = e.X - dragStart.X;
+                int offsetY = e.Y - dragStart.Y;
+
+                draggedAnnotation.Area = new Rectangle(
+                    draggedAnnotation.Area.X + offsetX,
+                    draggedAnnotation.Area.Y + offsetY,
+                    draggedAnnotation.Area.Width,
+                    draggedAnnotation.Area.Height);
+                dragStart = e.Location;
+
+                pictureBox1.Invalidate();
+            };
+
+            DrawResizeCursor(e, pictureBox1);
+        }
+
+        private void DrawResizeCursor(MouseEventArgs e, PictureBox pictureBox)
+        {
+            foreach (var annotation in annotations)
+            {
+                ResizeDirection direction = GetResizeDirection(annotation, e.Location);
+
+                if (direction != ResizeDirection.None)
+                {
+                    switch (direction)
+                    {
+                        case ResizeDirection.Left:
+                        case ResizeDirection.Right:
+                            pictureBox.Cursor = Cursors.SizeWE;
+                            break;
+                        case ResizeDirection.Top:
+                        case ResizeDirection.Bottom:
+                            pictureBox.Cursor = Cursors.SizeNS;
+                            break;
+                        //case ResizeDirection.TopLeft:
+                        //case ResizeDirection.BottomRight:
+                        //    pictureBox.Cursor = Cursors.SizeNWSE;
+                        //    break;
+                        //case ResizeDirection.TopRight:
+                        //case ResizeDirection.BottomLeft:
+                        //    pictureBox.Cursor = Cursors.SizeNESW;
+                        //    break;
+                    }
+                    return;
+                }
+            }
+
+            pictureBox.Cursor = Cursors.Default;
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
@@ -91,11 +215,21 @@ namespace MangaTranslatorHelper
                 }
                 currentRectangle = Rectangle.Empty;
             }
-            else if (e.Button == MouseButtons.Right && selectedAnnotation != null)
+            else if (isDragging)
             {
-                contextMenuStrip1.Show(pictureBox1, e.Location);
-                isDrawing = false;
+                isDragging = false;
+                draggedAnnotation = null;
             }
+            //else if (e.Button == MouseButtons.Right && selectedAnnotation != null)
+            //{
+            //    contextMenuStrip1.Show(pictureBox1, e.Location);
+            //    isDrawing = false;
+            //}
+
+            isDragging = false;
+            isResizing = false;
+            draggedAnnotation = null;
+            resizingAnnotation = null;
 
             pictureBox1.Invalidate();
         }
@@ -302,5 +436,27 @@ namespace MangaTranslatorHelper
                 toolStripStatusLabel1.Text = $"Load annotations {ofd.FileName}";
             }
         }
+
+        private ResizeDirection GetResizeDirection(Annotation annotation, Point mousePosition)
+        {
+            Rectangle rect = annotation.Area;
+
+            bool left = Math.Abs(mousePosition.X - rect.Left) <= resizeMargin;
+            bool right = Math.Abs(mousePosition.X - rect.Right) <= resizeMargin;
+            bool top = Math.Abs(mousePosition.Y - rect.Top) <= resizeMargin;
+            bool bottom = Math.Abs(mousePosition.Y - rect.Bottom) <= resizeMargin;
+
+            if (top && left) return ResizeDirection.TopLeft;
+            if (top && right) return ResizeDirection.TopRight;
+            if (bottom && left) return ResizeDirection.BottomLeft;
+            if (bottom && right) return ResizeDirection.BottomRight;
+            if (left) return ResizeDirection.Left;
+            if (right) return ResizeDirection.Right;
+            if (top) return ResizeDirection.Top;
+            if (bottom) return ResizeDirection.Bottom;
+
+            return ResizeDirection.None;
+        }
+
     }
 }

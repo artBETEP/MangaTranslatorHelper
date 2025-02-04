@@ -50,8 +50,8 @@
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(236, 37);
-            pictureBox1.Margin = new Padding(2, 1, 2, 1);
+            pictureBox1.Location = new Point(442, 77);
+            pictureBox1.Margin = new Padding(4, 2, 4, 2);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(800, 800);
             pictureBox1.SizeMode = PictureBoxSizeMode.AutoSize;
@@ -64,20 +64,20 @@
             // 
             // listView1
             // 
-            listView1.Location = new Point(20, 278);
-            listView1.Margin = new Padding(2, 1, 2, 1);
+            listView1.Location = new Point(37, 593);
+            listView1.Margin = new Padding(4, 2, 4, 2);
             listView1.Name = "listView1";
-            listView1.Size = new Size(211, 279);
+            listView1.Size = new Size(388, 591);
             listView1.TabIndex = 3;
             listView1.UseCompatibleStateImageBehavior = false;
             // 
             // textBox1
             // 
-            textBox1.Location = new Point(20, 169);
-            textBox1.Margin = new Padding(2, 1, 2, 1);
+            textBox1.Location = new Point(37, 361);
+            textBox1.Margin = new Padding(4, 2, 4, 2);
             textBox1.Multiline = true;
             textBox1.Name = "textBox1";
-            textBox1.Size = new Size(211, 87);
+            textBox1.Size = new Size(388, 181);
             textBox1.TabIndex = 4;
             // 
             // imageList1
@@ -98,8 +98,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1 });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Padding = new Padding(3, 1, 0, 1);
-            menuStrip1.Size = new Size(1036, 24);
+            menuStrip1.Size = new Size(1924, 40);
             menuStrip1.TabIndex = 6;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -107,70 +106,72 @@
             // 
             toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { openImageToolStripMenuItem, openFolderToolStripMenuItem, openToolStripMenuItem, saveMarkingToolStripMenuItem, exitToolStripMenuItem });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(37, 22);
+            toolStripMenuItem1.Size = new Size(71, 36);
             toolStripMenuItem1.Text = "File";
             // 
             // openImageToolStripMenuItem
             // 
             openImageToolStripMenuItem.Name = "openImageToolStripMenuItem";
-            openImageToolStripMenuItem.Size = new Size(147, 22);
+            openImageToolStripMenuItem.Size = new Size(292, 44);
             openImageToolStripMenuItem.Text = "Open image";
             openImageToolStripMenuItem.Click += OpenImage;
             // 
             // openFolderToolStripMenuItem
             // 
             openFolderToolStripMenuItem.Name = "openFolderToolStripMenuItem";
-            openFolderToolStripMenuItem.Size = new Size(147, 22);
+            openFolderToolStripMenuItem.Size = new Size(292, 44);
             openFolderToolStripMenuItem.Text = "Open folder";
             // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(147, 22);
+            openToolStripMenuItem.Size = new Size(292, 44);
             openToolStripMenuItem.Text = "Load marking";
             openToolStripMenuItem.Click += LoadMarking;
             // 
             // saveMarkingToolStripMenuItem
             // 
             saveMarkingToolStripMenuItem.Name = "saveMarkingToolStripMenuItem";
-            saveMarkingToolStripMenuItem.Size = new Size(147, 22);
+            saveMarkingToolStripMenuItem.Size = new Size(292, 44);
             saveMarkingToolStripMenuItem.Text = "Save marking";
             saveMarkingToolStripMenuItem.Click += SaveMarkingFile;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(147, 22);
+            exitToolStripMenuItem.Size = new Size(292, 44);
             exitToolStripMenuItem.Text = "Exit";
             // 
             // statusStrip1
             // 
+            statusStrip1.ImageScalingSize = new Size(32, 32);
             statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1 });
-            statusStrip1.Location = new Point(0, 569);
+            statusStrip1.Location = new Point(0, 1219);
             statusStrip1.Name = "statusStrip1";
-            statusStrip1.Size = new Size(1036, 22);
+            statusStrip1.Padding = new Padding(2, 0, 26, 0);
+            statusStrip1.Size = new Size(1924, 42);
             statusStrip1.TabIndex = 7;
             statusStrip1.Text = "statusStrip1";
             // 
             // toolStripStatusLabel1
             // 
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            toolStripStatusLabel1.Size = new Size(16, 17);
+            toolStripStatusLabel1.Size = new Size(29, 32);
             toolStripStatusLabel1.Text = "...";
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
-            ClientSize = new Size(1036, 591);
+            ClientSize = new Size(1924, 1261);
             Controls.Add(statusStrip1);
             Controls.Add(menuStrip1);
             Controls.Add(textBox1);
             Controls.Add(listView1);
             Controls.Add(pictureBox1);
             MainMenuStrip = menuStrip1;
-            Margin = new Padding(2, 1, 2, 1);
+            Margin = new Padding(4, 2, 4, 2);
             Name = "Form1";
             Text = "Manga Translator Helper";
             Load += Form1_Load;
