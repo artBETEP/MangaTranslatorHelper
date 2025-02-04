@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Forms;
 
 namespace MangaTranslatorHelper
 {
@@ -8,9 +9,15 @@ namespace MangaTranslatorHelper
         private bool isDrawing = false;
         private Point startPoint;
         private Rectangle currentRectangle;
+        
         private List<Annotation> annotations = new List<Annotation>();
         private Annotation selectedAnnotation = null;
+        
         private string imageFilename;
+
+        private bool isDragging = false;
+        private Point dragStart;
+        private Annotation draggedAnnotation = null;
 
         public Form1()
         {
@@ -50,7 +57,9 @@ namespace MangaTranslatorHelper
 
                 if (selectedAnnotation != null)
                 {
-                    pictureBox1.Invalidate();
+                    isDragging = true;
+                    dragStart = e.Location;
+                    draggedAnnotation = selectedAnnotation;
                     return;
                 }
 
@@ -71,6 +80,20 @@ namespace MangaTranslatorHelper
 
                 pictureBox1.Invalidate();
             }
+            else if (isDragging)
+            {
+                int offsetX = e.X - dragStart.X;
+                int offsetY = e.Y - dragStart.Y;
+
+                draggedAnnotation.Area = new Rectangle(
+                    draggedAnnotation.Area.X + offsetX,
+                    draggedAnnotation.Area.Y + offsetY,
+                    draggedAnnotation.Area.Width,
+                    draggedAnnotation.Area.Height);
+                dragStart = e.Location;
+
+                pictureBox1.Invalidate();
+            };
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
@@ -91,11 +114,16 @@ namespace MangaTranslatorHelper
                 }
                 currentRectangle = Rectangle.Empty;
             }
-            else if (e.Button == MouseButtons.Right && selectedAnnotation != null)
+            else if(isDragging)
             {
-                contextMenuStrip1.Show(pictureBox1, e.Location);
-                isDrawing = false;
+                isDragging = false;
+                draggedAnnotation = null;
             }
+            //else if (e.Button == MouseButtons.Right && selectedAnnotation != null)
+            //{
+            //    contextMenuStrip1.Show(pictureBox1, e.Location);
+            //    isDrawing = false;
+            //}
 
             pictureBox1.Invalidate();
         }
