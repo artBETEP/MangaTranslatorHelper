@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MangaTranslatorHelper
@@ -9,8 +10,7 @@ namespace MangaTranslatorHelper
         private Rectangle currentRectangle;
         private List<Annotation> annotations = new List<Annotation>();
         private Annotation selectedAnnotation = null;
-        private OpenAI chatGPT;
-
+        private string imageFilename;
 
         public Form1()
         {
@@ -24,7 +24,7 @@ namespace MangaTranslatorHelper
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void OpenImage(object sender, EventArgs e)
         {
             var ofd = new OpenFileDialog();
             ofd.Filter = "Image files|*.png;*.jpeg;*.jpg;*.bmp;*.gif|All files(*.*)|*.*";
@@ -32,13 +32,14 @@ namespace MangaTranslatorHelper
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 annotations.Clear();
-                pictureBox1.Image = Image.FromFile(ofd.FileName);
+                imageFilename = ofd.FileName;
+                pictureBox1.Image = Image.FromFile(imageFilename);
+                toolStripStatusLabel1.Text = $"Image loaded {ofd.FileName}";
             }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            chatGPT = new OpenAI("InsertChatGptApiKeyHere");
         }
 
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -49,7 +50,6 @@ namespace MangaTranslatorHelper
 
                 if (selectedAnnotation != null)
                 {
-                    //MessageBox.Show($"Annotation selected: {selectedAnnotation.Label}");
                     pictureBox1.Invalidate();
                     return;
                 }
@@ -79,7 +79,7 @@ namespace MangaTranslatorHelper
             {
                 isDrawing = false;
 
-                var label = PromptForLabel();
+                var label = PromptForLabel(currentRectangle);
 
                 if (!string.IsNullOrEmpty(label))
                 {
@@ -88,12 +88,8 @@ namespace MangaTranslatorHelper
                         Area = currentRectangle,
                         Label = label
                     });
-
-                    //MessageBox.Show($"Area saved: {currentRectangle}, Mark: {label}");
                 }
-
                 currentRectangle = Rectangle.Empty;
-
             }
             else if (e.Button == MouseButtons.Right && selectedAnnotation != null)
             {
@@ -114,19 +110,7 @@ namespace MangaTranslatorHelper
                 }
             }
 
-            foreach (var annotation in annotations)
-            {
-                using (Pen pen = new Pen(Color.Blue, 2))
-                {
-                    e.Graphics.DrawRectangle(pen, annotation.Area);
-                }
-
-                using (Font font = new Font("Arial", 10))
-                using (Brush brush = new SolidBrush(Color.Blue))
-                {
-                    e.Graphics.DrawString(annotation.Label, font, brush, annotation.Area);
-                }
-            }
+            DrawAnnotations(e);
 
             if (selectedAnnotation != null)
             {
@@ -137,7 +121,24 @@ namespace MangaTranslatorHelper
             }
         }
 
-        private string PromptForLabel()
+        private void DrawAnnotations(PaintEventArgs e)
+        {
+            foreach (var annotation in annotations)
+            {
+                using (Pen pen = new Pen(Color.Blue, 2))
+                {
+                    e.Graphics.DrawRectangle(pen, annotation.Area);
+                    e.Graphics.FillRectangle(Brushes.White, annotation.Area);
+                }
+
+                using (var font = GetOptimalFont(e.Graphics, annotation.Label, annotation.Area, new Font("Arial", 24)))
+                {
+                    e.Graphics.DrawString(annotation.Label, font, Brushes.Black, annotation.Area);
+                }
+            }
+        }
+
+        private string PromptForLabel(Rectangle rectangle, string text = "")
         {
             using (var prompt = new Form())
             {
@@ -147,13 +148,14 @@ namespace MangaTranslatorHelper
 
                 var textLabel = new Label() { Left = 20, Top = 15, Text = "Mark:" };
                 var inputBox = new TextBox() { Left = 20, Top = 50, Width = 400, Height = 300, Multiline = true };
+                inputBox.Text = text;
 
                 var confirmation = new Button() { Text = "OK", Left = 280, Top = 350, Width = 80, Height = 80 };
                 var translation = new Button() { Text = "Translate", Left = 120, Top = 350, Width = 120, Height = 80 };
 
 
                 confirmation.Click += (sender, e) => { prompt.DialogResult = DialogResult.OK; prompt.Close(); };
-                translation.Click += (sender, e) => { Translate(inputBox); };
+                translation.Click += (sender, e) => { Translate(inputBox, rectangle); };
 
                 prompt.Controls.Add(textLabel);
                 prompt.Controls.Add(inputBox);
@@ -169,7 +171,7 @@ namespace MangaTranslatorHelper
         {
             if (selectedAnnotation != null)
             {
-                string newLabel = PromptForLabel();
+                var newLabel = PromptForLabel(selectedAnnotation.Area, selectedAnnotation.Label);
                 if (!string.IsNullOrEmpty(newLabel))
                 {
                     selectedAnnotation.Label = newLabel;
@@ -188,15 +190,17 @@ namespace MangaTranslatorHelper
             }
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void SaveMarkingFile(object sender, EventArgs e)
         {
             var sfd = new SaveFileDialog();
             sfd.Title = "Save marking data";
             sfd.Filter = "Text files|*.txt|All files(*.*)|*.*";
+            sfd.FileName = imageFilename.Split('\\').Last().Split('.').First() + ".txt";
 
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 SaveMarkingToFile(sfd.FileName);
+                toolStripStatusLabel1.Text = $"Annotations saved {sfd.FileName}";
             }
         }
 
@@ -217,9 +221,86 @@ namespace MangaTranslatorHelper
             }
         }
 
-        private async Task Translate(TextBox textBox)
+        private async Task Translate(TextBox textBox, Rectangle rectangle)
         {
-            textBox.Text = await chatGPT.SendMessageAsync("Reply with you version");
+            if (rectangle != null)
+            {
+                var crop = CropImage(pictureBox1.Image, rectangle);
+                textBox.Text = "Please wait...";
+
+                string apiKey = "Insert_API_key_here";
+                var image = crop;
+
+                var processor = new GeminiImageProcessor(apiKey);
+                textBox.Text = await processor.ProcessImageAsync(image);
+            }
+            else
+            {
+                textBox.Text = "Nothing selected";
+            };
+        }
+
+        static Bitmap CropImage(Image image, Rectangle cropArea)
+        {
+            var bitmap = new Bitmap(cropArea.Width, cropArea.Height);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.DrawImage(image, new Rectangle(0, 0, cropArea.Width, cropArea.Height), cropArea, GraphicsUnit.Pixel);
+            }
+            return bitmap;
+        }
+
+        private Font GetOptimalFont(Graphics g, string text, Rectangle rect, Font baseFont, float maxSize = 24, float minSize = 6)
+        {
+            var fontSize = maxSize;
+            var font = new Font(baseFont.FontFamily, fontSize, baseFont.Style);
+
+            var textSize = g.MeasureString(text, font);
+
+            while ((textSize.Width > rect.Width || textSize.Height > rect.Height) && fontSize > minSize)
+            {
+                fontSize -= 0.5f;
+                font = new Font(baseFont.FontFamily, fontSize, baseFont.Style);
+                textSize = g.MeasureString(text, font);
+            }
+
+            return font;
+        }
+
+        private void LoadMarking(object sender, EventArgs e)
+        {
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "Text files|*.txt|All files(*.*)|*.*";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                var newAnnotations = new List<Annotation>();
+
+                var l = File.ReadAllLines(ofd.FileName);
+
+                for (int i = 0; i < l.Length; i++)
+                {
+                    if (string.IsNullOrEmpty(l[i]))
+                    {
+                        continue;
+                    }
+
+                    var coords = l[i].Split(new char[] { '[', ']', ',' }).Where(x => x != "").Select(x => int.Parse(x)).ToArray();
+                    var text = l[i + 1];
+                    i++;
+
+                    newAnnotations.Add(
+                        new Annotation
+                        {
+                            Label = text,
+                            Area = new Rectangle(coords[0], coords[1], coords[2], coords[3])
+                        });
+                }
+
+                annotations = newAnnotations;
+                pictureBox1.Invalidate();
+                toolStripStatusLabel1.Text = $"Load annotations {ofd.FileName}";
+            }
         }
     }
 }

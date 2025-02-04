@@ -11,13 +11,16 @@ namespace MangaTranslatorHelper
     {
         private readonly string _apiKey;
         private readonly string _endpoint = "https://api.openai.com/v1/chat/completions";
+        private const string gptModel = "gpt-4o-mini";
+
+
 
         public OpenAI(string apiKey)
         {
             _apiKey = apiKey;
         }
 
-        public async Task<string> SendMessageAsync(string userMessage, string model = "gpt-4o-mini", int maxTokens = 150, double temperature = 0.7)
+        public async Task<string> SendMessageAsync(string userMessage, string model = gptModel, int maxTokens = 150, double temperature = 0.7)
         {
             var requestBody = new
             {
@@ -48,17 +51,17 @@ namespace MangaTranslatorHelper
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                         var chatResponse = JsonSerializer.Deserialize<ChatResponse>(responseContent, options);
 
-                        return chatResponse?.Choices[0].Message.Content ?? "Нет ответа от модели.";
+                        return chatResponse?.Choices[0].Message.Content ?? "No reply from model.";
                     }
                     else
                     {
-                        return $"Ошибка: {response.StatusCode}\n{responseContent}";
+                        return $"Error: {response.StatusCode}\n{responseContent}";
                     }
                 }
             }
             catch (Exception ex)
             {
-                return $"Произошла ошибка: {ex.Message}";
+                return $"Exception: {ex.Message}";
             }
         }
 
@@ -76,6 +79,48 @@ namespace MangaTranslatorHelper
         {
             public string Role { get; set; }
             public string Content { get; set; }
+        }
+
+        public async Task<string> SendRequestWithImageAsync(Bitmap picture, string prompt)
+        {
+            try
+            {
+                var converter = new ImageConverter();
+                var imageBytes = (byte[])converter.ConvertTo(picture, typeof(byte[]));
+
+                var base64Image = Convert.ToBase64String(imageBytes);
+
+                var requestBody = new
+                {
+                    prompt = prompt,
+                    image = base64Image, 
+                    model = gptModel
+                };
+
+                string json = JsonSerializer.Serialize(requestBody);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+
+                    var response = await client.PostAsync(_endpoint, new StringContent(json, Encoding.UTF8, "application/json"));
+
+                    string responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return responseContent;
+                    }
+                    else
+                    {
+                        return $"Error: {response.StatusCode}\n{responseContent}";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Exception: {ex.Message}";
+            }
         }
     }
 }

@@ -39,6 +39,16 @@
       "frameworks": {
         "net6.0-windows7.0": {
           "targetAlias": "net6.0-windows",
+          "dependencies": {
+            "Google.Cloud.Translation.V2": {
+              "target": "Package",
+              "version": "[3.4.0, )"
+            },
+            "Google.Cloud.Vision.V1": {
+              "target": "Package",
+              "version": "[3.7.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
