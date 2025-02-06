@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 
@@ -20,9 +21,11 @@ namespace MangaTranslatorHelper
 
         private bool isResizing = false;
         private const int resizeMargin = 10;
-        //private Rectangle resizeRectangle;
         private Annotation resizingAnnotation = null;
         private ResizeDirection resizeDirection = ResizeDirection.None;
+
+        private GeminiImageProcessor processor;
+        private const string apiKey = "";
 
         private enum ResizeDirection
         {
@@ -181,14 +184,14 @@ namespace MangaTranslatorHelper
                         case ResizeDirection.Bottom:
                             pictureBox.Cursor = Cursors.SizeNS;
                             break;
-                        //case ResizeDirection.TopLeft:
-                        //case ResizeDirection.BottomRight:
-                        //    pictureBox.Cursor = Cursors.SizeNWSE;
-                        //    break;
-                        //case ResizeDirection.TopRight:
-                        //case ResizeDirection.BottomLeft:
-                        //    pictureBox.Cursor = Cursors.SizeNESW;
-                        //    break;
+                            //case ResizeDirection.TopLeft:
+                            //case ResizeDirection.BottomRight:
+                            //    pictureBox.Cursor = Cursors.SizeNWSE;
+                            //    break;
+                            //case ResizeDirection.TopRight:
+                            //case ResizeDirection.BottomLeft:
+                            //    pictureBox.Cursor = Cursors.SizeNESW;
+                            //    break;
                     }
                     return;
                 }
@@ -362,10 +365,13 @@ namespace MangaTranslatorHelper
                 var crop = CropImage(pictureBox1.Image, rectangle);
                 textBox.Text = "Please wait...";
 
-                string apiKey = "Insert_API_key_here";
                 var image = crop;
 
-                var processor = new GeminiImageProcessor(apiKey);
+                if (processor == null)
+                {
+                    processor = new GeminiImageProcessor(apiKey);
+                }
+
                 textBox.Text = await processor.ProcessImageAsync(image);
             }
             else
@@ -387,16 +393,29 @@ namespace MangaTranslatorHelper
         private Font GetOptimalFont(Graphics g, string text, Rectangle rect, Font baseFont, float maxSize = 24, float minSize = 6)
         {
             var fontSize = maxSize;
+
+            var count = text.Length;
+
+            var w = rect.Width / fontSize;
+            var h = rect.Height / fontSize;
+
+            while (fontSize > minSize && w * h < count)
+            {
+                w = rect.Width / ( fontSize * 2f );
+                h = rect.Height / ( fontSize * 4f );
+                fontSize--;
+            }
+
             var font = new Font(baseFont.FontFamily, fontSize, baseFont.Style);
 
-            var textSize = g.MeasureString(text, font);
+            //var textSize = g.MeasureString(text, font);
 
-            while ((textSize.Width > rect.Width || textSize.Height > rect.Height) && fontSize > minSize)
-            {
-                fontSize -= 0.5f;
-                font = new Font(baseFont.FontFamily, fontSize, baseFont.Style);
-                textSize = g.MeasureString(text, font);
-            }
+            //while ((textSize.Width > rect.Width || textSize.Height > rect.Height) && fontSize > minSize)
+            //{
+            //    fontSize -= 0.5f;
+            //    font = new Font(baseFont.FontFamily, fontSize, baseFont.Style);
+            //    textSize = g.MeasureString(text, font);
+            //}
 
             return font;
         }
@@ -441,15 +460,23 @@ namespace MangaTranslatorHelper
         {
             Rectangle rect = annotation.Area;
 
-            bool left = Math.Abs(mousePosition.X - rect.Left) <= resizeMargin;
-            bool right = Math.Abs(mousePosition.X - rect.Right) <= resizeMargin;
-            bool top = Math.Abs(mousePosition.Y - rect.Top) <= resizeMargin;
-            bool bottom = Math.Abs(mousePosition.Y - rect.Bottom) <= resizeMargin;
+            bool left = Math.Abs(mousePosition.X - rect.Left) <= resizeMargin
+                && (mousePosition.Y - rect.Top) > 0
+                && (mousePosition.Y - rect.Bottom) < 0;
+            bool right = Math.Abs(mousePosition.X - rect.Right) <= resizeMargin
+                && (mousePosition.Y - rect.Top) > 0
+                && (mousePosition.Y - rect.Bottom) < 0;
+            bool top = Math.Abs(mousePosition.Y - rect.Top) <= resizeMargin
+                && (mousePosition.X - rect.Left) > 0
+                && (mousePosition.X - rect.Right) < 0;
+            bool bottom = Math.Abs(mousePosition.Y - rect.Bottom) <= resizeMargin
+                && (mousePosition.X - rect.Left) > 0
+                && (mousePosition.X - rect.Right) < 0;
 
-            if (top && left) return ResizeDirection.TopLeft;
-            if (top && right) return ResizeDirection.TopRight;
-            if (bottom && left) return ResizeDirection.BottomLeft;
-            if (bottom && right) return ResizeDirection.BottomRight;
+            //if (top && left) return ResizeDirection.TopLeft;
+            //if (top && right) return ResizeDirection.TopRight;
+            //if (bottom && left) return ResizeDirection.BottomLeft;
+            //if (bottom && right) return ResizeDirection.BottomRight;
             if (left) return ResizeDirection.Left;
             if (right) return ResizeDirection.Right;
             if (top) return ResizeDirection.Top;
@@ -458,5 +485,64 @@ namespace MangaTranslatorHelper
             return ResizeDirection.None;
         }
 
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            if (processor == null)
+            {
+                processor = new GeminiImageProcessor(apiKey);
+            }
+
+            var rawRespone = await processor.ProcessTextBlocksAsync(pictureBox1.Image);
+
+            var newAnnotations = ParseRespone(rawRespone, pictureBox1.Image.Width, pictureBox1.Image.Height);
+
+            annotations.AddRange(newAnnotations);
+
+            pictureBox1.Invalidate();
+        }
+
+        private static IList<Annotation> ParseRespone(string respone, int width, int height)
+        {
+            var annotations = new List<Annotation>();
+            var s = respone.Split('(').Where(s=>!String.IsNullOrEmpty(s));
+
+            foreach (var line in s)
+            {
+                //if( line.Length < 8 ) continue;
+
+                int splitPoint = line.IndexOf(')') + 1;
+                annotations.Add(new Annotation
+                {
+                    Label = line.Substring(splitPoint),
+                    Area = ParseRectangle(line.Substring(0, splitPoint), width, height)
+                });
+            }
+
+            return annotations;
+        }
+
+        private static Rectangle ParseRectangle(string input, int imageWidth, int imageHeight)
+        {
+            string cleanedInput = input.Trim('(', ')');
+            string[] values = cleanedInput.Split(';');
+
+            if (values.Length != 4)
+            {
+
+                throw new ArgumentException($"Invalid rectangle format. Expected 4 values. Raw view: {input}");
+            }
+
+            float x = float.Parse(values[0].Trim(), CultureInfo.InvariantCulture);
+            float y = float.Parse(values[1].Trim(), CultureInfo.InvariantCulture);
+            float width = float.Parse(values[2].Trim(), CultureInfo.InvariantCulture);
+            float height = float.Parse(values[3].Trim(), CultureInfo.InvariantCulture);
+
+            int absoluteX = (int)(x * imageWidth);
+            int absoluteY = (int)(y * imageHeight);
+            int absoluteWidth = (int)(width * imageWidth);
+            int absoluteHeight = (int)(height * imageHeight);
+
+            return new Rectangle(absoluteX, absoluteY, absoluteWidth, absoluteHeight);
+        }
     }
 }

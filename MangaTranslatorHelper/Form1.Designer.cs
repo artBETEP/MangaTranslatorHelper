@@ -43,6 +43,7 @@
             exitToolStripMenuItem = new ToolStripMenuItem();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
@@ -64,10 +65,10 @@
             // 
             // listView1
             // 
-            listView1.Location = new Point(37, 593);
+            listView1.Location = new Point(37, 77);
             listView1.Margin = new Padding(4, 2, 4, 2);
             listView1.Name = "listView1";
-            listView1.Size = new Size(388, 591);
+            listView1.Size = new Size(388, 173);
             listView1.TabIndex = 3;
             listView1.UseCompatibleStateImageBehavior = false;
             // 
@@ -159,12 +160,23 @@
             toolStripStatusLabel1.Size = new Size(29, 32);
             toolStripStatusLabel1.Text = "...";
             // 
+            // button1
+            // 
+            button1.Location = new Point(37, 831);
+            button1.Name = "button1";
+            button1.Size = new Size(92, 46);
+            button1.TabIndex = 8;
+            button1.Text = "Detect";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
             ClientSize = new Size(1924, 1261);
+            Controls.Add(button1);
             Controls.Add(statusStrip1);
             Controls.Add(menuStrip1);
             Controls.Add(textBox1);
@@ -199,5 +211,6 @@
         private ToolStripMenuItem openFolderToolStripMenuItem;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel toolStripStatusLabel1;
+        private Button button1;
     }
 }
